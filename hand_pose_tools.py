@@ -1,9 +1,9 @@
 import cv2, numpy as np, mediapipe as mp
 
 class ImageHandler:
-    def getCalibrationMatrices(camera_selection, SIZE): # 캘리브레이션        
+    def getCalibrationMatrices(camera_selection, SIZE, global_image=None): # 캘리브레이션        
         # 내부파라미터, 왜곡, 캘리브레이션_rvec, 캘리브레이션_tvec
-        _, K, dist, calib_rvecs, calib_tvecs = ImageHandler.calibrateMyCamera(camera_selection, SIZE) 
+        _, K, dist, calib_rvecs, calib_tvecs = ImageHandler.calibrateMyCamera(camera_selection, SIZE, global_image)
         
         # 3x3 내부파라미터를 3x4 로 확장합니다.
         extended_K = MatrixHandler.extendMatrix("K", K)
@@ -11,30 +11,36 @@ class ImageHandler:
         # 캘리브레이션_rvec 와 캘리브레이션_tvec 이용하여 4x4 변환행렬을 만듭니다.
         calib_R_t_with_0001 = MatrixHandler.extendMatrix("[R|t]", calib_rvecs[0], calib_tvecs[0])
         
+        # print(K[0][0])
         return K, extended_K, calib_R_t_with_0001, dist # 내부파라미터, 확장내부파라미터, 변환행렬, 왜곡
     
-    def calibrateMyCamera(camera_selection, SIZE):
-        while True:
-            cap = cv2.VideoCapture(camera_selection)
-            success, img = cap.read()
-            if success:
-                img = cv2.flip(img, 1)
+    def calibrateMyCamera(camera_selection, SIZE, global_image=None):
+        if not global_image: # 초기 캘리브레이션
+            while True:
+                cap = cv2.VideoCapture(camera_selection)
+                success, image = cap.read()
+                if success:
+                    image = cv2.flip(image, 1)
 
-            try:
-                # 체크보드 코너 찾기
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                object_points = np.zeros((1, SIZE[0] * SIZE[1], 3), np.float32)
-                object_points[0, :, :2] = np.mgrid[0 : SIZE[0], 0 : SIZE[1]].T.reshape(-1, 2)
-                success, corners = cv2.findChessboardCorners(gray, SIZE, None)
-                
-                if not success:
-                    print("코너 찾기 실패(재촬영 시도 or 체크보드의 가로세로 코너 개수 확인 필요)")
-                    continue
-                print("코너 찾기 성공")
+                    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                    object_points = np.zeros((1, SIZE[0] * SIZE[1], 3), np.float32)
+                    object_points[0, :, :2] = np.mgrid[0 : SIZE[0], 0 : SIZE[1]].T.reshape(-1, 2)
+
+                    success, corners = cv2.findChessboardCorners(gray, SIZE, None)
+                if success:
+                    return cv2.calibrateCamera([object_points], [corners], gray.shape[::-1], None, None)
+
+        else: # 실시간 캘리브레이션
+            image = cv2.flip(global_image, 1)
+
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            object_points = np.zeros((1, SIZE[0] * SIZE[1], 3), np.float32)
+            object_points[0, :, :2] = np.mgrid[0 : SIZE[0], 0 : SIZE[1]].T.reshape(-1, 2)
+
+            success, corners = cv2.findChessboardCorners(gray, SIZE, None)
+            if success:
                 return cv2.calibrateCamera([object_points], [corners], gray.shape[::-1], None, None)
-            except:
-                continue
-    
+ 
     def processImage(hands, image): # 이미지 속성 및 랜드마크 분석결과 가져오기
         image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
         image.flags.writeable = False
