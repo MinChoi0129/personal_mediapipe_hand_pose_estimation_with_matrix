@@ -12,7 +12,8 @@ class ImageHandler:
         return image, K, extended_K, calib_R_t_with_0001, dist # 내부파라미터, 확장내부파라미터, 변환행렬, 왜곡
     
     def calibrateMyCamera(camera_selection, SIZE, global_image=None):
-        if not global_image: # 초기 캘리브레이션
+        if type(global_image) == type(None): # 초기 캘리브레이션
+            print("1차 캘리브레이션")
             while True:
                 cap = cv2.VideoCapture(camera_selection)
                 success, image = cap.read()
@@ -26,8 +27,10 @@ class ImageHandler:
                     success, corners = cv2.findChessboardCorners(gray, SIZE, None)
                 if success:
                     return image, *cv2.calibrateCamera([object_points], [corners], gray.shape[::-1], None, None)
+                print("Corner 검출 실패")
 
         else: # 실시간 캘리브레이션
+            print("실시간 캘리브레이션")
             image = cv2.flip(global_image, 1)
 
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

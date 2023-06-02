@@ -1,11 +1,30 @@
-▶ 본인에게 편한 가상환경(개발환경: 파이썬 3.9)을 생성하고 해당 가상환경의 터미널에서 아래 명령을 실행합니다.
-
-================================
+▶ 본인에게 편한 가상환경을 생성하고 해당 가상환경의 터미널에서 아래 명령을 실행합니다.
+====================================
+conda create -n 환경이름 python=3.x
+conda activate 환경이름
 pip install -r requirements.txt
-================================
+====================================
+
+==============  예시  ==============
+conda create -n pymp python=3.9
+conda activate pymp
+pip install -r requirements.txt
+====================================
+
+
 
 ▶ 전체적인 흐름은 다음과 같습니다.
-
 ================================================================================================================================
-multiprocessing을 도전하는 중...
+1차 캘리브레이션을 진행합니다. (estimation이 calibration보다 먼저 진행되어 estimation에 문제가 생기는 것을 막기 위함)
+이 이후엔 두 가지 프로세스(estimation, caibration)를 동시에 진행합니다.
+
+global variables로 global_image, K, extended_K, calib_R_t_with_0001, dist가 있으며 이 값들을 두 프로세스가 실시간으로 R/W 합니다.
+
+> calibration
+realTimeCalibration 함수가 프로그램 종료(Press Q) 가 발생하기 전까지 무한 루프를 돌며 global variables를 update합니다.
+여기서 중요한 점은 'global_image' 라는 변수를 calibration 함수만 Write 할 수 있고, estimation 함수는 Read-Only 입니다.
+
+> estimation
+global variable인 'global_image' 를 읽어들여 Hands 를 추적하여 results를 만들어냅니다.
+results에 여러 값들이 들어있는데, 이 중 hand 좌표계의 3D, 2D 좌표를 얻어내고 이 좌표들을 활용해 다양한 연산을 진행하고 시각화합니다.
 ================================================================================================================================
