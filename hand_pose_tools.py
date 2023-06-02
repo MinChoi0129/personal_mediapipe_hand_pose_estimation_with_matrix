@@ -4,19 +4,15 @@ class ImageHandler:
     def getCalibrationMatrices(camera_selection, SIZE, global_image=None): # 캘리브레이션        
         # 내부파라미터, 왜곡, 캘리브레이션_rvec, 캘리브레이션_tvec
         image, _, K, dist, calib_rvecs, calib_tvecs = ImageHandler.calibrateMyCamera(camera_selection, SIZE, global_image)
-        
         # 3x3 내부파라미터를 3x4 로 확장합니다.
         extended_K = MatrixHandler.extendMatrix("K", K)
-        
         # 캘리브레이션_rvec 와 캘리브레이션_tvec 이용하여 4x4 변환행렬을 만듭니다.
         calib_R_t_with_0001 = MatrixHandler.extendMatrix("[R|t]", calib_rvecs[0], calib_tvecs[0])
-        
         print(K[0][0])
         return image, K, extended_K, calib_R_t_with_0001, dist # 내부파라미터, 확장내부파라미터, 변환행렬, 왜곡
     
     def calibrateMyCamera(camera_selection, SIZE, global_image=None):
         if not global_image: # 초기 캘리브레이션
-            print("init")
             while True:
                 cap = cv2.VideoCapture(camera_selection)
                 success, image = cap.read()
@@ -32,7 +28,6 @@ class ImageHandler:
                     return image, *cv2.calibrateCamera([object_points], [corners], gray.shape[::-1], None, None)
 
         else: # 실시간 캘리브레이션
-            print("realtime")
             image = cv2.flip(global_image, 1)
 
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
