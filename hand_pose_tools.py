@@ -12,8 +12,8 @@ class ImageHandler:
         return image, K, extended_K, calib_R_t_with_0001, dist # 내부파라미터, 확장내부파라미터, 변환행렬, 왜곡
     
     def calibrateMyCamera(camera_selection, SIZE):
-        while True:
-            cap = cv2.VideoCapture(camera_selection)
+        cap = cv2.VideoCapture(camera_selection)
+        while cap.isOpened():
             success, image = cap.read()
             if success:
                 image = cv2.flip(image, 1)
