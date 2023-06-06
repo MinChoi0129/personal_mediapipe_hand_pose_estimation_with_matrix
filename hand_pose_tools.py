@@ -8,7 +8,6 @@ class ImageHandler:
         extended_K = MatrixHandler.extendMatrix("K", K)
         # 캘리브레이션_rvec 와 캘리브레이션_tvec 이용하여 4x4 변환행렬을 만듭니다.
         calib_R_t_with_0001 = MatrixHandler.extendMatrix("[R|t]", calib_rvecs[0], calib_tvecs[0])
-        print(K[0][0])
         return image, K, extended_K, calib_R_t_with_0001, dist # 내부파라미터, 확장내부파라미터, 변환행렬, 왜곡
     
     def calibrateMyCamera(camera_selection, SIZE):
@@ -24,10 +23,10 @@ class ImageHandler:
 
                 success, corners = cv2.findChessboardCorners(gray, SIZE, None)
             if success:
+                print("Corner 찾기 성공!")
                 return image, *cv2.calibrateCamera([object_points], [corners], gray.shape[::-1], None, None)
             print("Corner 검출 실패")
 
- 
     def processImage(hands, image): # 이미지 속성 및 랜드마크 분석결과 가져오기
         image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
         image.flags.writeable = False
@@ -84,20 +83,7 @@ class MatrixHandler:
         return h2c2i_coords, w2c2i_coords
 
 class Analyzer:
-    def analyzeResult(image_points, h2c2i_coords, w2c2i_coords, h, w, image=None): # h2c2i: hand_to_camera_to_image, w2c2i: world_to_camera_to_image
-
-        ### 수치적 분석 ###
-        # for landmark_number in range(21):
-        #     mp_x, mp_y = image_points[landmark_number]
-        #     h2c_x, h2c_y, _ = h2c2i_coords[landmark_number]
-        #     w2c_x, w2c_y, _ = w2c2i_coords[landmark_number]
-        #     print("-------------------------------------------------------")
-        #     print("Pure MediaPipe  Point %d: [%.7f, %.7f]" % (landmark_number+1, mp_x, mp_y))
-        #     print("H2C_to_Image    Point %d: [%.7f, %.7f]" % (landmark_number+1, h2c_x, h2c_y))
-        #     print("W2C_to_Image    Point %d: [%.7f, %.7f]" % (landmark_number+1, w2c_x, w2c_y))
-
-
-        ### 시각적 분석###
+    def visualAnalyze(image_points, h2c2i_coords, w2c2i_coords, h, w, image=None): # h2c2i: hand_to_camera_to_image, w2c2i: world_to_camera_to_image
         # 1. H2C와 W2C 원(circle) 그리기
         for landmark_number in range(21):
             h2c_x, h2c_y, _ = map(int, h2c2i_coords[landmark_number])
@@ -128,3 +114,13 @@ class Analyzer:
                 image = cv2.line(image, (w2c_1_x, w2c_1_y), (w2c_2_x, w2c_2_y), (255, 0, 0), 2)
 
         return image
+    
+    def numericAnalyze(image_points, h2c2i_coords, w2c2i_coords):
+        for landmark_number in range(21):
+            mp_x, mp_y = image_points[landmark_number]
+            h2c_x, h2c_y, _ = h2c2i_coords[landmark_number]
+            w2c_x, w2c_y, _ = w2c2i_coords[landmark_number]
+            print("-------------------------------------------------------")
+            print("Pure MediaPipe  Point %d: [%.7f, %.7f]" % (landmark_number+1, mp_x, mp_y))
+            print("H2C_to_Image    Point %d: [%.7f, %.7f]" % (landmark_number+1, h2c_x, h2c_y))
+            print("W2C_to_Image    Point %d: [%.7f, %.7f]" % (landmark_number+1, w2c_x, w2c_y))
